@@ -14,6 +14,22 @@ With 10,000 simulated paths and seed 2025, the mean discounted net cash flow was
 
 ![Distribution of discounted swap cash flows across 10,000 simulated currency paths](figures/swap-distribution.png)
 
+## Check a fixing against the workbook
+
+| Discounted value to the borrower | EUR |
+| --- | ---: |
+| Fifteen annual shocks set to zero | -34,621,290.55 |
+| Change only the 2014 shock to -2 standard deviations | -45,759,578.17 |
+| Difference | -11,138,287.62 |
+
+Each row uses the principal outstanding at the beginning of its period. Interest uses the actual number of days divided by 360. The currency path advances on a 365-day basis. When the post-introductory fixing is below the barrier, the extra coupon depends on strike divided by that year's fixing. The model then discounts the net receipt in euros. A negative value is a cost to the borrower.
+
+To compare Excel and Python, set the **2014** shock in the Scenario sheet to -2 and leave every other shock at zero. This is a deterministic comparison at the contract level. The distribution above is a separate Monte Carlo run under the workbook's fixed rates and volatility.
+
+```sh
+python swap.py --paths 10000 --seed 2025 --stress-year 2014 --stress-sigma -2
+```
+
 ## Reproduce the study
 
 ```sh
@@ -23,5 +39,4 @@ python swap.py --paths 10000 --seed 2025
 
 The [Python model](swap.py) reads the same inputs as Excel. To run a batch inside desktop Excel, save a copy of the workbook as an Excel macro-enabled workbook, import [ScenarioAnalysis.bas](vba/ScenarioAnalysis.bas) and run `RunScenarios`. Each row of **Runs** records the full swap and its 2014 and 2020 payments on the same path. The fixed shocks in **Scenario** can be used without macros.
 
-Portfolio by **Tom Bussard**, March 2025.
-
+Tom Bussard
