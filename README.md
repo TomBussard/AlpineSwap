@@ -24,7 +24,7 @@ With 10,000 simulated paths and seed 2025, the mean discounted net cash flow was
 
 ### From a currency fixing to a euro payment
 
-I quote $S_i$ in Swiss francs per euro. Let $d_i$ be the number of days in period $i$, $\Delta t_i=d_i/365$ and $Z_i$ its standard normal shock. The model advances from the previous fixing using constant EUR and CHF rates and annual FX volatility $\sigma=3\%$.
+I quote $S_i$ in Swiss francs per euro. Let $d_i$ be the number of days in period $i$, $\Delta t_i=d_i/365$ and $Z_i$ its standard normal shock. The model advances from the previous fixing using constant EUR and CHF rates and annual FX volatility of 3% ($\sigma=0.03$).
 
 ```math
 \log(S_i/S_{i-1})=(r_{\mathrm{CHF}}-r_{\mathrm{EUR}}-\tfrac12\sigma^2)\Delta t_i+\sigma\sqrt{\Delta t_i}\,Z_i
