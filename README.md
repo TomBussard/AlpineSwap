@@ -2,6 +2,12 @@
 
 A municipal borrower receives a fixed 5.10 percent coupon and pays a rate linked to EUR/CHF on an amortising loan. I examined how a stronger Swiss franc changes the borrower's payments over fifteen years, and why a few early savings can coexist with a large loss over the life of the swap.
 
+## Scenario tools
+
+I built two ways to examine the contract. In Excel, **Inputs** holds the loan, FX, coupon and discount assumptions. **Scenario** follows one set of annual shocks, so a single cell change can be traced through the fixing, barrier, debt outstanding and net payment. The optional VBA routine switches to random shocks, recalculates one path at a time and writes its full value and two selected annual payments into **Runs**.
+
+In Python I can repeat a fixed path, stress any one fixing year, choose the number of Monte Carlo paths and fix the random seed. The simulation returns a matrix with one discounted cash flow per path and year. That lets me study a particular payment, the whole swap, or how two years move together. [Workbook](AlpineSwap.xlsx) · [Python scenario engine](swap.py) · [Excel batch routine](vba/ScenarioAnalysis.bas)
+
 ## Follow one payment
 
 Open the [Excel workbook](AlpineSwap.xlsx). The **Inputs** sheet contains the market assumptions. **Scenario** follows each annual fixing through the coupon, outstanding principal and discounted net cash flow. Change the fixed shock on one row to see how the rest of the path changes. The public edition follows the original workbook's introductory coupons of 2.00 percent for two years and 3.50 percent for two more. From year five, a fixing below 1.47 triggers the extra coupon.
@@ -48,6 +54,47 @@ To compare Excel and Python, set the **2014** shock in the Scenario sheet to -2 
 
 ```sh
 python swap.py --paths 10000 --seed 2025 --stress-year 2014 --stress-sigma -2
+```
+
+## Amortisation and the distribution of losses
+
+The loan opens at **EUR 52.483 million**. Its first scheduled principal repayment is EUR 2.43218228 million and subsequent repayments grow by 5% each year. If $A_j$ is repayment $j$ and $N$ the original principal, interest for period $i$ is calculated on
+
+```math
+A_j=A_1(1+g)^{j-1},\qquad P_i=N-\sum_{j=1}^{i-1}A_j.
+```
+
+Five earlier repayments bring the 2014 opening balance to **EUR 39.04366 million**. As the loan amortises, an identical coupon change produces a smaller euro payment on a smaller balance. A shock to FX persists on the path and can still alter whether future fixings cross the barrier.
+
+For each path $k$ I add its fifteen discounted coupon differences to obtain $V_k$. The simulation reports the sample mean, an empirical fifth percentile and the fraction of paths with negative net value to the borrower. The standard error measures sampling variability in the estimated mean for these fixed inputs.
+
+```math
+\bar V=\frac{1}{M}\sum_{k=1}^{M}V_k,\qquad
+\widehat{\mathrm{SE}}(\bar V)=\frac{s(V)}{\sqrt M},\qquad
+\widehat p_{\rm loss}=\frac{1}{M}\sum_{k=1}^{M}\mathbf{1}_{\{V_k<0\}}.
+```
+
+| Repeated calculation, 10,000 paths and seed 2025 | Output |
+| --- | ---: |
+| Mean path value | EUR −35.672 million |
+| Standard deviation across individual paths | EUR 17.409 million |
+| Standard error of the mean | EUR 0.174 million |
+| Fifth percentile of path values | EUR −65.135 million |
+| Correlation between the discounted 2014 and 2020 payments | 0.699 |
+
+The two annual payments average **EUR −5.355 million** and **EUR −2.850 million** respectively. They are positively correlated because they share the earlier currency shocks. That dependence is preserved when valuing the swap as a whole.
+
+```python
+import numpy as np
+from swap import fixing_years, present_values, read_inputs
+
+inputs = read_inputs()
+shocks = np.random.default_rng(2025).standard_normal((10_000, 15))
+cashflows = present_values(inputs, shocks)
+years = list(fixing_years(inputs))
+payments = cashflows[:, [years.index(2014), years.index(2020)]]
+print(cashflows.sum(axis=1).std(ddof=1) / np.sqrt(len(cashflows)))
+print(np.corrcoef(payments.T)[0, 1])
 ```
 
 ## Reproduce the study
