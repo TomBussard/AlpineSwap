@@ -22,7 +22,27 @@ With 10,000 simulated paths and seed 2025, the mean discounted net cash flow was
 | Change only the 2014 shock to -2 standard deviations | -45,759,578.17 |
 | Difference | -11,138,287.62 |
 
-Each row uses the principal outstanding at the beginning of its period. Interest uses the actual number of days divided by 360. The currency path advances on a 365-day basis. When the post-introductory fixing is below the barrier, the extra coupon depends on strike divided by that year's fixing. The model then discounts the net receipt in euros. A negative value is a cost to the borrower.
+### From a currency fixing to a euro payment
+
+I quote $S_i$ in Swiss francs per euro. Let $d_i$ be the number of days in period $i$, $\Delta t_i=d_i/365$ and $Z_i$ its standard normal shock. The model advances from the previous fixing using constant EUR and CHF rates and annual FX volatility $\sigma=3\%$.
+
+```math
+\log(S_i/S_{i-1})=(r_{\mathrm{CHF}}-r_{\mathrm{EUR}}-\tfrac12\sigma^2)\Delta t_i+\sigma\sqrt{\Delta t_i}\,Z_i
+```
+
+For the first four payments the contract uses the introductory coupons above. From year five the borrower pays a base rate of 2.57%, with an additional amount when the fixing is strictly below 1.47.
+
+```math
+c_i=0.0257+\begin{cases}1.54/S_i-1 & S_i<1.47\\0 & S_i\ge 1.47\end{cases}
+```
+
+Let $P_i$ be the principal left after all earlier repayments and $t_i$ the elapsed years on an actual/365 basis. The borrower receives 5.10% on that principal. Interest accrues on actual/360 and each annual net receipt is discounted at 5.12% plus a 0.50% margin.
+
+```math
+PV_i=\frac{P_i(0.051-c_i)\,d_i/360}{(1+0.0512+0.0050)^{t_i}},\qquad PV=\sum_{i=1}^{15}PV_i
+```
+
+In 2014 the opening principal is **EUR 39.04 million**. On the zero-shock path the fixing is **1.2745**, the payable coupon is **23.40%** and that year's discounted net payment is **EUR −5.22 million**. A shock of −2 moves the fixing to **1.2003**, raises the coupon to **30.87%** and changes that payment to **EUR −7.35 million**. Across all fifteen payments the shock reduces the swap's value by **EUR 11.14 million** because the lower FX level also feeds subsequent fixings. [FX path, repayment schedule and discounting](swap.py) · [Scenario worksheet](AlpineSwap.xlsx)
 
 To compare Excel and Python, set the **2014** shock in the Scenario sheet to -2 and leave every other shock at zero. This is a deterministic comparison at the contract level. The distribution above is a separate Monte Carlo run under the workbook's fixed rates and volatility.
 
